@@ -342,10 +342,91 @@ def showTextScreen(text):
 	# draw one image onto another
 	# Surface objects represent images
 	# Rect objects represent rectangular areas
-	
+
 	DISPLAYSURF.blit(titleSurf, titleRect)
 
+	#Draw the text
+	titleSurf, titleRect = makeTextObjects(text, BIGFONT, TEXTCOLOR)
+	titleRect.center = (int(WINDOWWIDTH / 2) - 3, int(WINDOWHEIGHT / 2) - 3)
+	DISPLAYSURF.blit(titleSurf, titleRect)
 
+	#Draw additional press key to play text
+	pressKeySurf, pressKeyRect = makeTextObjects('Press a key to play', BASICFONT, TEXTCOLOR)
+
+	# when user presses a key, display will stop
+	# consistently loop and display screen as no keys are pressed
+	while checkForKeyPress() == None:
+		pygame.display.update()
+		FPSCLOCK.tick
+
+# if there is a quit event in the queue or user presses Esc, terminate
+def checkForQuit():
+	for event in pygame.event.get(QUIT):
+		terminate()
+	for event in pygame.event.get(KEYUP):
+		if event.key == K_ESCAPE:
+			terminate()
+		pygame.event.post(event) # put the event back in the queue after you take it out
+
+# every line completed is one point, every ten lines is up a level
+def calculate calculateLevelAndFallFreq(score):
+	level = int(score / 10) + 1
+	# fall freq starts at 0.27 and moves faster by 0.02 seconds each level
+	# after level 14, the speed no longer changes (ln 277)
+	fallFreq = 0.27 - level * 0.02 # change this equation to adjust difficulty per level
+	return level, fallFreq
+
+# piece data structure has shape, rotation index, x, y, color fields
+def getNewPiece():
+	# return a random piece of random rotation and color
+
+	#random.choice selects a random element from nonempty sequence
+	# pick OLIZST
+	shape = random.choice(list(SHAPES.keys()))
+	newPiece = {'shape': shape,
+	# SHAPES[shape] is the array of rotations
+	# rotation gives the index of the array
+	'rotation': random.randint(0, len(SHAPES[shape]) - 1),
+	'x' : int(NUMBOXWIDTH / 2) - int(TEMPLATEWIDTH / 2),
+	'y': -2, # start the piece above the baord
+	'color': random.randint(0, len(COLORS) - 1)}
+	return newPiece
+
+def addToBoard(board, piece):
+	# nested for loops go through the entire grid of tetromino
+	# if a box is an O, then that coordinate + the piece's coordinate is set on the board
+
+	for x in range(TEMPLATEWIDTH):
+		for y in range(TEMPLATEHEIGHT):
+			if SHAPES[piece['shape']][piece['rotation']][y][x] != BLANK:
+				# assumes the template is pivoted from the top left corner as the origin
+				board[x + piece['x']][y + piece['y']] = piece['color']
+
+
+# setting up a blank board column by column
+def getBlankBoard():
+	board = []
+	for i in range(NUMBOXWIDTH):
+		board.append([BLANK] * NUMBOXHEIGHT)
+	return board
+
+def isOnBoard(x, y):
+	return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
+
+def isValidPosition(board, piece, adjX=0, adjY=0):
+	for x in range(TEMPLATEWIDTH):
+		for y in range(TEMPLATEHEIGHT):
+			isAboveBoard = y + piece['y'] + adjY < 0
+			if isAboveBoard or SHAPES[piece['shape']][piece['rotation']][y][x] == BLANK:
+				continue
+				# disregard box if it is blank, or is above the board
+			if not isOnBoard(x + piece['x'] + adjX, y + piece['y'] + adjY):
+				return False
+				# return false if the piece is not on the baord
+			if board[x + piece['x'] + adjX][y + piece['y'] + adjY] != BLANK:
+				return False
+				# if the piece is NOT blank and the board piece is not blank... there is overlap... false
+	return True
 
 
 
