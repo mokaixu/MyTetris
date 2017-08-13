@@ -6,15 +6,16 @@ from pygame.locals import *
 # SETUP CONSTANTS
 FPS = 25
 WINDOWWIDTH = 640
-WIDOWHEIGHT = 480
+WINDOWHEIGHT = 480
 BOXSIZE = 20
 NUMBOXWIDTH = 10
 NUMBOXHEIGHT = 20
 BLANK = '.'
 MOVESIDEWAYSFREQ = 0.15 #when L/R keys are pressed, will move 0.15 boxes per second
 MOVEDOWNFREQ = 0.1 #when down key is pressed, will move 0.1 boxes down per second
-XMARGIN = int((WINDOWWIDTH - BOXSIZE * NUMBOXWIDTH) * 0.5) #space from window to canvas
-TOPMARGIN = WINDOWHEIGHT - (BOXSIZE * NUMBOXHEIGHT) - 5 #board is drawn 5 pixels above window
+
+XMARGIN = int((WINDOWWIDTH - NUMBOXWIDTH * BOXSIZE) / 2)
+TOPMARGIN = WINDOWHEIGHT - (NUMBOXHEIGHT * BOXSIZE) - 5
 
 # COLOR CONSTANTS
 WHITE = (255, 255, 255)
@@ -172,8 +173,13 @@ def main():
 	pygame.display.set_caption('Tetromino')
 
 	showTextScreen('Tetromino')
+	while True:
+		runGame()
+		pygame.mixer.music.stop()
+		showTextScreen('Game Over!!!')
 
 def runGame():
+	showTextScreen('hello')
 	board = getBlankBoard()
 	lastMoveDownTime = time.time()
 	lastMoveSidewaysTime = time.time()
@@ -227,9 +233,7 @@ def runGame():
 
 			# state of key is pressed
 			elif event.key == KEYDOWN:
-					if (event.key == K_LEFT or event.key == K_a) and 
-					#optional parameters adjx & adjy that act as shortcut (do not need to pass in object location, just the change)
-					isValidPosition(board, fallingPiece, adjX=-1):
+				if (event.key == K_LEFT or event.key == K_a) and isValidPosition(board, fallingPiece, adjX=-1):
 						fallingPiece['x'] -= 1 # change the x coordinate
 						movingLeft = True
 						movingRight = False
@@ -272,48 +276,48 @@ def runGame():
 			#moving by holding Down the key
 			# lastMoveSidewaysTime is set at the first keystroke, so if the key is held for a long
 			# time, then the if statement will always be true, so change the position accordingly
-			if (movingLeft or movingRight) and time.time() - lastMoveSidewaysTime > MOVESIDEWAYSFREQ:
-				if movingLeft and isValidPosition(board, fallingPiece, adjX=-1):
-					fallingPiece['x'] -= 1
-				elif movingRight and isValidPosition(board, fallingPiece, adjX=1):
-					fallingPiece['x'] += 1
-				lastMoveSidewaysTime = time.time()
+		if (movingLeft or movingRight) and time.time() - lastMoveSidewaysTime > MOVESIDEWAYSFREQ:
+			if movingLeft and isValidPosition(board, fallingPiece, adjX=-1):
+				fallingPiece['x'] -= 1
+			elif movingRight and isValidPosition(board, fallingPiece, adjX=1):
+				fallingPiece['x'] += 1
+			lastMoveSidewaysTime = time.time()
 
-			if movingDown and time.time() - lastMoveDownTime > MOVEDOWNFREQ and isValidPosition(board, fallingPiece, adjY=1):
-				fallingPiece['y'] += 1
-				lastMoveDownTime = time.time()
+		if movingDown and time.time() - lastMoveDownTime > MOVEDOWNFREQ and isValidPosition(board, fallingPiece, adjY=1):
+			fallingPiece['y'] += 1
+			lastMoveDownTime = time.time()
 
 
 			#naturally falling piece
 			# below is the condition for elapsed time
-			if time.time() - lastFallTime > fallFreq:
-				# has the piece landed?
-				if not isValidPosition(board, fallingPiece, adjY=1):
+		if time.time() - lastFallTime > fallFreq:
+			# has the piece landed?
+			if not isValidPosition(board, fallingPiece, adjY=1):
 
-					# add the piece to the board data structure
-					addToBoard(board, fallingPiece)
-					# erase completed lines from board data structure, pull boxes down, update score with number of lines removed
-					score += removeCompleteLines(board)
-					# depending on score, level and fall frequency will change
-					level, fallFreq = calculateLevelAndFallFreq(score)
-					fallingPiece = None # get a new piece
-				else:
-					#keep moving piece down
-					fallingPiece['y'] += 1
-					lastFallTime = time.time()
+				# add the piece to the board data structure
+				addToBoard(board, fallingPiece)
+				# erase completed lines from board data structure, pull boxes down, update score with number of lines removed
+				score += removeCompleteLines(board)
+				# depending on score, level and fall frequency will change
+				level, fallFreq = calculateLevelAndFallFreq(score)
+				fallingPiece = None # get a new piece
+			else:
+				#keep moving piece down
+				fallingPiece['y'] += 1
+				lastFallTime = time.time()
 
-			#draw everything on the screen
-			DISPLAYSURF.fill(BGCOLOR)
-			drawBoard(board)
-			drawStatus(score, level)
-			drawNextPiece(nextPiece)
-			if fallingPiece != None:
-				drawPiece(fallingPiece)
+		#draw everything on the screen
+		DISPLAYSURF.fill(BGCOLOR)
+		drawBoard(board)
+		drawStatus(score, level)
+		drawNextPiece(nextPiece)
+		if fallingPiece != None:
+			drawPiece(fallingPiece)
 
-			# updates the display as the game loops on the screen
-			# tick makes the game run at a reasonable pace
-			pygame.display.update()
-			FPSCLOCK.tick(FPS)
+		# updates the display as the game loops on the screen
+		# tick makes the game run at a reasonable pace
+		pygame.display.update()
+		FPSCLOCK.tick(FPS)
 
 # given text, font, color objects, calls render and returns Surface and Rect object for text
 def makeTextObjects(text, font, color):
@@ -335,6 +339,8 @@ def checkForKeyPress():
 		return event.key # we want KEYUP events
 	return None # if no KEYUP events
 
+# Function will show a GIANT white blob of text
+# for key events like Game Startup / Game Over
 def showTextScreen(text):
 	# display large screen of text until a keystroke is detected
 	titleSurf, titleRect = makeTextObjects(text, BIGFONT, TEXTSHADOWCOLOR)
@@ -369,7 +375,7 @@ def checkForQuit():
 		pygame.event.post(event) # put the event back in the queue after you take it out
 
 # every line completed is one point, every ten lines is up a level
-def calculate calculateLevelAndFallFreq(score):
+def calculateLevelAndFallFreq(score):
 	level = int(score / 10) + 1
 	# fall freq starts at 0.27 and moves faster by 0.02 seconds each level
 	# after level 14, the speed no longer changes (ln 277)
@@ -411,7 +417,7 @@ def getBlankBoard():
 	return board
 
 def isOnBoard(x, y):
-	return x >= 0 and x < BOARDWIDTH and y < BOARDHEIGHT
+	return x >= 0 and x < NUMBOXWIDTH and y < NUMBOXHEIGHT
 
 def isValidPosition(board, piece, adjX=0, adjY=0):
 	for x in range(TEMPLATEWIDTH):
@@ -430,14 +436,14 @@ def isValidPosition(board, piece, adjX=0, adjY=0):
 
 
 def isCompleteLine(board, y):
-	for x in range(BOARDWIDTH):
+	for x in range(NUMBOXWIDTH):
 		if board[x][y] == BLANK:
 			return False
 	return True
 
 def removeCompleteLines(board):
 	numLinesRemoved = 0
-	y = BOARDHEIGHT - 1
+	y = NUMBOXHEIGHT - 1
 	while y >= 0:
 		if isCompleteLine(board, y):
 
@@ -445,9 +451,9 @@ def removeCompleteLines(board):
 			for pullDownY in range(y, 0, -1):
 
 				# copy values from row above to current row for all rows in range
-				for x in range(BOARDWIDTH):
+				for x in range(NUMBOXWIDTH):
 					boardpx[x][pullDownY] = board[x][pullDownY - 1]
-			for x in range(BOARDWIDTH):
+			for x in range(NUMBOXWIDTH):
 				# make the top row blank
 				board[x][0] = BLANK
 			numLinesRemoved += 1
@@ -467,11 +473,58 @@ def drawBox(boxx, boxy, color, pixelx=None, pixely=None):
 		return
 	if pixelx == None and pixely == None:
 		pixelx, pixely = convertToPixelCoords(boxx, boxy)
+		# the left and top parameters are off by one to have a blank space between the boxes
 	pygame.draw.rect(DISPLAYSURF, COLORS[color], (pixelx + 1, pixely + 1, BOXSIZE - 1, BOXSIZE - 1))
 
+def drawBoard(board):
+	# drawing the thick border around the board
+	pygame.draw.rect(DISPLAYSURF, BORDERCOLOR, (XMARGIN - 3, TOPMARGIN - 7, (NUMBOXWIDTH * BOXSIZE) + 8, (NUMBOXHEIGHT * BOXSIZE) + 8), 5)
 
+	# fill the background of the board
+	pygame.draw.rect(DISPLAYSURF, BGCOLOR, (XMARGIN, TOPMARGIN, BOXSIZE * NUMBOXWIDTH, BOXSIZE * NUMBOXHEIGHT))
 
+	# draw the individual boxes
+	for x in range(NUMBOXWIDTH):
+		for y in range(NUMBOXHEIGHT):
+			# drawBox already does NOT draw if the box is blank
+			drawBox(x, y, board[x][y])
 
+def drawStatus(score, level):
+	# need a surface and rectangle
+	scoreSurf = BASICFONT.render('Score: %' % score, True, TEXTCOLOR)
+	scoreRect = scoreSurf.get_rect()
 
+	# recall WINDOWWIDTH = 640
+	scoreRect.topleft = (WINDOWWIDTH - 150, 20)
+	DISPLAYSURF.blit(scoreSurf, scoreRect)
 
+# for the NEXT piece, it is not drawn on the board
+# must pass pixel parameters (where the next piece will be dispayed visally)
+def drawPiece(piece, pixelx=None, pixely=None):
+	# recall piece data structure specifies shape, rotation, and position
+	# get the correct shape from the dictionary
+	# and the corresponding orientation
+	shapeToDraw = SHAPES[piece['shape']][piece['rotation']]
+	if pixelx == None and pixely == None:
+		# if pixels are not specified, use the position coords specified in the data strcture
+		pixelx, pixely = convertToPixelCoords(piece['x'], piece['y'])
+	
+	# iterate through each box in the template
+	# if the box is not blank, draw the box
+	for x in range(TEMPLATEWIDTH):
+		for y in range(TEMPLATEHEIGHT):
+			if shapeToDraw[y][x] != BLANK:
+				drawBox(None, None, piece['color'], pixelx + (x * BOXSIZE), pixely + y * BOXSIZE)
 
+def drawNextPiece(piece):
+	# draw the next text
+	nextSurf = BASICFONT.render('NEXT:', True, TEXTCOLOR)
+	nextRect = nextSurf.get_rect()
+	nextRect.topleft = (WINDOWWIDTH - 120, 80)
+	DISPLAYSURF.blit(nextSurf, netRect)
+	#draw the next piece at a fixed position on the screen
+	drawPiece(piece, pixelx=WINDOWWIDTH-120, pixely=100)
+
+# call the main function afater each function defitinion is executed
+if __name__ == '__main__':
+	main()
