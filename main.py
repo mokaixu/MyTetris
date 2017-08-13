@@ -429,8 +429,45 @@ def isValidPosition(board, piece, adjX=0, adjY=0):
 	return True
 
 
+def isCompleteLine(board, y):
+	for x in range(BOARDWIDTH):
+		if board[x][y] == BLANK:
+			return False
+	return True
 
+def removeCompleteLines(board):
+	numLinesRemoved = 0
+	y = BOARDHEIGHT - 1
+	while y >= 0:
+		if isCompleteLine(board, y):
 
+			# start from the bottom row and work up
+			for pullDownY in range(y, 0, -1):
+
+				# copy values from row above to current row for all rows in range
+				for x in range(BOARDWIDTH):
+					boardpx[x][pullDownY] = board[x][pullDownY - 1]
+			for x in range(BOARDWIDTH):
+				# make the top row blank
+				board[x][0] = BLANK
+			numLinesRemoved += 1
+			# remember there is the case where the row you are copying
+			# down is also complete, so you do not decrement y
+		else:
+
+			y -= 1
+	return numLinesRemoved
+
+# convert to pixel coordinates using box size in pixels * num of boxes
+def convertToPixelCoords(boxx, boxy):
+	return (XMARGIN + boxx * BOXSIZE, TOPMARGIN + boxy * BOXSIZE)
+
+def drawBox(boxx, boxy, color, pixelx=None, pixely=None):
+	if color == BLANK:
+		return
+	if pixelx == None and pixely == None:
+		pixelx, pixely = convertToPixelCoords(boxx, boxy)
+	pygame.draw.rect(DISPLAYSURF, COLORS[color], (pixelx + 1, pixely + 1, BOXSIZE - 1, BOXSIZE - 1))
 
 
 
