@@ -11,7 +11,7 @@ BOXSIZE = 20
 NUMBOXWIDTH = 10
 NUMBOXHEIGHT = 20
 BLANK = '.'
-MOVESIDEWAYSFREQ = 0.15 #when L/R keys are pressed, will move 0.15 boxes per second
+MOVESIDEWAYSFREQ = 0.10 #when L/R keys are pressed, will move 0.15 boxes per second
 MOVEDOWNFREQ = 0.1 #when down key is pressed, will move 0.1 boxes down per second
 
 XMARGIN = int((WINDOWWIDTH - NUMBOXWIDTH * BOXSIZE) / 2)
@@ -21,22 +21,16 @@ TOPMARGIN = WINDOWHEIGHT - (NUMBOXHEIGHT * BOXSIZE) - 5
 WHITE = (255, 255, 255)
 GRAY = (185, 185, 185)
 BLACK = (0, 0, 0)
-RED = (155, 0, 0)
-LIGHTRED = (175, 20, 20)
-GREEN = (0, 155, 0)
-LIGHTGREEN = (20, 175, 20)
-BLUE = (0, 0, 155)
-LIGHTBLUE = (20, 20, 175)
-YELLOW = (155, 155, 0)
-LIGHTYELLOW = (175, 175, 20)
+RED = (255, 0, 170)
+GREEN = (170, 255, 0)
+BLUE = (0, 170, 255)
+PURPLE = (170, 0, 255)
 
 BORDERCOLOR = BLUE
 BGCOLOR = BLACK
 TEXTCOLOR = WHITE
 TEXTSHADOWCOLOR = GRAY
-COLORS = (BLUE, GREEN, RED, YELLOW)
-LIGHTCOLORS = (LIGHTBLUE, LIGHTGREEN, LIGHTRED, LIGHTYELLOW)
-assert len(COLORS) == len(LIGHTCOLORS) #each color needs an associated light color for hue differentiation
+COLORS = (BLUE, GREEN, RED, PURPLE)
 
 # TEMPLATE PIECES
 TEMPLATEWIDTH = 5
@@ -92,14 +86,14 @@ O_TEMPLATE = [
 
 L_TEMPLATE = [['.....',
                 '...O.',
-                      '.OOO.',
-                      '.....',
-                      '.....'],
-                     ['.....',
-                      '..O..',
-                      '..O..',
-                      '..OO.',
-                      '.....'],
+                '.OOO.',
+                '.....',
+                '.....'],
+                ['.....',
+                 '..O..',
+                 '..O..',
+                 '..OO.',
+                 '.....'],
                      ['.....',
                       '.....',
                       '.OOO.',
@@ -167,19 +161,21 @@ def main():
 	pygame.init()
 	#update the time every time the position of a piece changes
 	FPSCLOCK = pygame.time.Clock()
+	# initialize a window for display
 	DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 	BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
 	BIGFONT = pygame.font.Font('freesansbold.ttf', 100)
-	pygame.display.set_caption('Tetromino')
-
-	showTextScreen('Tetromino')
+	# set current window caption
+	pygame.display.set_caption('MyTetris')
+	showTextScreen('MyTetris')
 	while True:
+		pygame.mixer.music.load('ThemeA.mid')
+		pygame.mixer.music.play(-1, 0.0)
 		runGame()
-		pygame.mixer.music.stop()
 		showTextScreen('Game Over!!!')
+		pygame.mixer.music.stop()
 
 def runGame():
-	showTextScreen('hello')
 	board = getBlankBoard()
 	lastMoveDownTime = time.time()
 	lastMoveSidewaysTime = time.time()
@@ -232,7 +228,7 @@ def runGame():
 					movingDown = False
 
 			# state of key is pressed
-			elif event.key == KEYDOWN:
+			elif event.type == KEYDOWN:
 				if (event.key == K_LEFT or event.key == K_a) and isValidPosition(board, fallingPiece, adjX=-1):
 						fallingPiece['x'] -= 1 # change the x coordinate
 						movingLeft = True
@@ -358,6 +354,8 @@ def showTextScreen(text):
 
 	#Draw additional press key to play text
 	pressKeySurf, pressKeyRect = makeTextObjects('Press a key to play', BASICFONT, TEXTCOLOR)
+	pressKeyRect.center = (int(WINDOWWIDTH / 2), int(WINDOWHEIGHT / 2) + 100 )
+	DISPLAYSURF.blit(pressKeySurf, pressKeyRect)
 
 	# when user presses a key, display will stop
 	# consistently loop and display screen as no keys are pressed
@@ -452,7 +450,7 @@ def removeCompleteLines(board):
 
 				# copy values from row above to current row for all rows in range
 				for x in range(NUMBOXWIDTH):
-					boardpx[x][pullDownY] = board[x][pullDownY - 1]
+					board[x][pullDownY] = board[x][pullDownY - 1]
 			for x in range(NUMBOXWIDTH):
 				# make the top row blank
 				board[x][0] = BLANK
@@ -491,7 +489,7 @@ def drawBoard(board):
 
 def drawStatus(score, level):
 	# need a surface and rectangle
-	scoreSurf = BASICFONT.render('Score: %' % score, True, TEXTCOLOR)
+	scoreSurf = BASICFONT.render('Score: %s' % score, True, TEXTCOLOR)
 	scoreRect = scoreSurf.get_rect()
 
 	# recall WINDOWWIDTH = 640
@@ -521,7 +519,7 @@ def drawNextPiece(piece):
 	nextSurf = BASICFONT.render('NEXT:', True, TEXTCOLOR)
 	nextRect = nextSurf.get_rect()
 	nextRect.topleft = (WINDOWWIDTH - 120, 80)
-	DISPLAYSURF.blit(nextSurf, netRect)
+	DISPLAYSURF.blit(nextSurf, nextRect)
 	#draw the next piece at a fixed position on the screen
 	drawPiece(piece, pixelx=WINDOWWIDTH-120, pixely=100)
 

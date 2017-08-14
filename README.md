@@ -1,1 +1,3 @@
 # MyTetris
+
+![Screenshot](/screenshot.png)
